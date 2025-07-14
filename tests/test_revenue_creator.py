@@ -7,6 +7,7 @@ import revenue_creator
 
 class TestDataPipeline(unittest.TestCase):
 
+    # Test if create_date_range correctly generates a range of dates between start_date and end_date
     def test_create_date_range(self):
         start_date = datetime(2025, 1, 1)
         end_date = datetime(2025, 1, 3)
@@ -14,6 +15,7 @@ class TestDataPipeline(unittest.TestCase):
         expected_dates = pd.date_range(start=start_date, end=end_date)
         pd.testing.assert_index_equal(result, expected_dates)
 
+    # Test if generate_all_combinations returns all possible combinations of products and dates
     def test_generate_all_combinations(self):
         product_df = pd.DataFrame({"sku_id": [1, 2]})
         date_list = pd.date_range("2025-01-01", "2025-01-02")
@@ -22,6 +24,7 @@ class TestDataPipeline(unittest.TestCase):
         self.assertEqual(len(result), expected_rows)
         self.assertListEqual(list(result.columns), ["sku_id", "date_id"])
 
+    # Test if aggregate_sales correctly sums sales for each product per day
     def test_aggregate_sales(self):
         data = {
             "sku_id": [1, 1, 2],
@@ -34,6 +37,7 @@ class TestDataPipeline(unittest.TestCase):
         self.assertEqual(result.loc[result["sku_id"] == 1, "sales"].values[0], 5)  # 2+3=5 sales for sku 1 on 1 Jan
         self.assertEqual(result.loc[result["sku_id"] == 2, "sales"].values[0], 5)
 
+    # Test if build_revenue_table correctly calculates revenue by multiplying price and sales
     def test_build_revenue_table(self):
         product_df = pd.DataFrame({"sku_id": [1], "price": [10]})
         date_list = pd.date_range("2025-01-01", "2025-01-01")
@@ -43,12 +47,14 @@ class TestDataPipeline(unittest.TestCase):
         self.assertIn("revenue", result.columns)
         self.assertEqual(result.loc[0, "revenue"], 30)  # 10 price * 3 sales
 
+    # Test successful database connection with a mock sqlite3.connect
     @patch('revenue_creator.sqlite3.connect')
     def test_connect_db_success(self, mock_connect):
         mock_connect.return_value = MagicMock(spec=sqlite3.Connection)
         conn = revenue_creator.connect_db('fake_path.db')
         self.assertIsNotNone(conn)
 
+    # Test database connection failure handling by forcing sqlite3.connect to raise an error
     @patch('revenue_creator.sqlite3.connect', side_effect=sqlite3.Error("Failed to connect"))
     def test_connect_db_failure(self, mock_connect):
         with self.assertRaises(sqlite3.Error):
